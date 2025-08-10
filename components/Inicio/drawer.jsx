@@ -1,38 +1,72 @@
-// components/ChatsDrawer.js
-import React, { useState, useEffect } from 'react';
-import { ScrollView } from 'react-native';
-import { Drawer } from 'react-native-paper';
-// Ajustá la ruta a tu JSON
-import chatsData from '../../constants/chatshistory.json';
+import React, { useEffect, useState } from "react";
+import { DrawerContentScrollView } from "@react-navigation/drawer";
+import { Drawer as PaperDrawer } from "react-native-paper";
+import chatsData from "../../constants/chatshistory.json"; // [{ id: "1", name: "Agus" }, ...]
 
-export default function ChatsDrawer({ title = 'Chats', initialActiveId, onSelectChat }) {
-  const [activeId, setActiveId] = useState(initialActiveId || null);
+export default function ChatsDrawer({
+  navigation,
+  state,
+  title = "Chats",
+  onSelectChat,
+}) {
+  const [activeId, setActiveId] = useState(null);
   const [chats, setChats] = useState([]);
 
   useEffect(() => {
-    // Carga directa del JSON local
-    setChats(chatsData);
+    setChats(Array.isArray(chatsData) ? chatsData : []);
+    if (chatsData?.[0]?.id) {
+      setActiveId(chatsData[0].id);
+    }
   }, []);
+
+  // Sync con la ruta activa
+  useEffect(() => {
+    const current = state?.routes?.[state.index];
+    const fromRoute = current?.params?.chatId;
+
+    if (fromRoute && fromRoute !== activeId) {
+      setActiveId(fromRoute);
+    }
+  }, [state, activeId]);
 
   const handlePress = (chat) => {
     setActiveId(chat.id);
-    if (onSelectChat) {
-      onSelectChat(chat.id);
-    }
+    navigation.navigate("Chat", { chatId: chat.id });
+    onSelectChat?.(chat.id);
   };
 
   return (
-    <Drawer.Section title={title}>
-      <ScrollView>
+    <DrawerContentScrollView>
+      <PaperDrawer.Section title={title}>
+        <PaperDrawer.Item 
+            icon={"chat-plus"}
+            label="New Chat"
+            style={style.listItems}
+            onPress={() => {
+              setActiveId(null);
+              navigation.navigate("Home");
+            }}
+        />
         {chats.map((chat) => (
-          <Drawer.Item
+          <PaperDrawer.Item
             key={chat.id}
-            label={chat.name} // 👈 Solo el nombre
+            label={chat.name}
             active={activeId === chat.id}
+            style={style.listItems}
             onPress={() => handlePress(chat)}
           />
         ))}
-      </ScrollView>
-    </Drawer.Section>
+      </PaperDrawer.Section>
+    </DrawerContentScrollView>
   );
 }
+
+
+const style = {
+  listItems: {
+    backgroundColor: "#7c7b7bff",
+    height: 50,
+    marginVertical: 5,
+    borderRadius: 30,
+  }
+};
