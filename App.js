@@ -9,6 +9,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { TypeAnimation } from 'react-native-type-animation';
 import { Barpild } from './components/Inicio/barPild';
 import ChatsDrawer from './components/Inicio/drawer'; // <- tu lista como contenido del drawer
+import React, { useState } from "react";
+
+import CharacterSelector from "./components/Inicio/characterSelector";
+
 
 const Drawer = createDrawerNavigator();
 
@@ -19,6 +23,10 @@ function HomeScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
+
+      <View style={styles.selectorWrap}>
+        <CharacterSelector />
+      </View>
 
       <IconButton
         icon="menu"
@@ -37,7 +45,7 @@ function HomeScreen() {
 
       <TypeAnimation
         sequence={[
-          { text: 'Chatty.cpp', typeSpeed: 80, delayBetweenSequence: 3000 },
+          { text: 'Chatty.cpp', typeSpeed: 80, delayBetweenSequence: 4000 },
           { text: 'Feel secure', typeSpeed: 80, delayBetweenSequence: 1000 },
           { text: 'Feel private', typeSpeed: 80, delayBetweenSequence: 1000 },
           { text: 'Feel free', typeSpeed: 80, delayBetweenSequence: 1000 },
@@ -126,6 +134,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#232323',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  selectorWrap: {
+    position: "absolute", 
+    top: 55,              
+    left: 100,            
   },
   title: {
     color: '#cfcdcdff',
