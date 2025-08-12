@@ -1,62 +1,69 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { useNavigation, DrawerActions, CommonActions  } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { TypeAnimation } from 'react-native-type-animation';
-import * as FileSystem from 'expo-file-system';          
-import store from '../utils/storeinfo';            
-
-
+import * as FileSystem from 'expo-file-system';
+import store from '../utils/storeinfo';
 import { Barpild } from '../components/Inicio/barPild';
 import CharacterSelector from '../components/Inicio/characterSelector';
+
+const chatsDir = `${FileSystem.documentDirectory}assets/chats`;
 
 export default function HomeScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const creatingRef = useRef(false);
 
-
-  const getNextId = (arr) => {
+  const getNextId = useCallback((arr) => {
     if (!Array.isArray(arr) || arr.length === 0) return 1;
     const maxId = arr.reduce((max, it) => Math.max(max, parseInt(it.id || '0', 10) || 0), 0);
     return maxId + 1;
-  };
+  }, []);
 
-  const handleSend = async (textFromBar) => {
+  const handleSend = useCallback(async (textFromBar) => {
     const msg = (textFromBar || '').trim();
-    if (!msg) return;
+    if (!msg || creatingRef.current) return;
+    creatingRef.current = true;
 
-    console.log('Recibido:', msg);
+    try {
+      let chatsData = await store.readJSON('chatsHistory');
+      if (!Array.isArray(chatsData)) chatsData = [];
+      chatsData = chatsData.filter(Boolean);
 
-    await store.initStore();
-    let chatsData = await store.readJSON('chatsHistory');
-    if (!Array.isArray(chatsData)) chatsData = [];
+      const newId = getNextId(chatsData);
+      const idStr = String(newId);
 
-    const newId = getNextId(chatsData);
+      await FileSystem.makeDirectoryAsync(chatsDir, { intermediates: true });
+      const chatPath = `${chatsDir}/${idStr}.json`;
+      const payload = {
+        history: [
+          {
+            timestamp: new Date().toISOString(),
+            role: 'user',
+            content: msg,
+          },
+        ],
+      };
+      await FileSystem.writeAsStringAsync(chatPath, JSON.stringify(payload, null, 2));
 
-    const chatHistory = {
-      history: [
-        {
-          timestamp: new Date().toISOString(),
-          role: 'user',
-          content: msg,
-        },
-      ],
-    };
-
-    const dir = `${FileSystem.documentDirectory}assets/chats`;
-    await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
-
-    const chatPath = `${dir}/${newId}.json`;
-    await FileSystem.writeAsStringAsync(chatPath, JSON.stringify(chatHistory, null, 2));
-
-    chatsData.push({ id: String(newId), name: msg });
-    await store.writeJSON('chatsHistory', chatsData);
-
-    navigation.navigate("Chat", { chatId: String(newId) });
-
-  };
+      const firstName = msg.slice(0, 40);
+      chatsData.push({ id: idStr, name: firstName });
+      await store.writeJSON('chatsHistory', chatsData);
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Chat', params: { chatId: idStr } }],
+        })
+      );
+    } catch (e) {
+      console.warn('handleSend create chat error', e);
+    } finally {
+      creatingRef.current = false;
+    }
+  }, [getNextId, navigation]);
 
   return (
     <View style={styles.container}>
@@ -93,9 +100,8 @@ export default function HomeScreen() {
           zIndex: 100,
           borderRadius: 999,
         }}
-        onPress={() => navigation.navigate('Ajustes LLM')} // 👈 abre la screen
+        onPress={() => navigation.navigate('Ajustes LLM')}
       />
-
 
       <TypeAnimation
         sequence={[

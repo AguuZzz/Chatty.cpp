@@ -14,10 +14,9 @@ export default function AjustesLLM({ navigation }) {
   const insets = useSafeAreaInsets();
 
   const [nBatch, setNBatch] = useState(256);
-  const [nCtx, setNCtx] = useState(2048);      // numérico directo
-  const [threads, setThreads] = useState(4);   // slider
+  const [nCtx, setNCtx] = useState(2048);     
+  const [threads, setThreads] = useState(4);   
 
-  // Copia el config inicial si no existe
   async function ensureConfig() {
     const fileInfo = await FileSystem.getInfoAsync(CONFIG_PATH);
     if (!fileInfo.exists) {
@@ -28,7 +27,6 @@ export default function AjustesLLM({ navigation }) {
     }
   }
 
-  // Carga config.json desde FS
   async function loadConfig() {
     await ensureConfig();
     const data = await FileSystem.readAsStringAsync(CONFIG_PATH);
@@ -38,18 +36,17 @@ export default function AjustesLLM({ navigation }) {
     setThreads(Number(parsed.threads ?? 4));
   }
 
-  // Guarda cambios en config.json
   async function saveConfig() {
     const newConfig = {
       n_batch: nBatch,
-      n_ctx: Math.max(256, Math.floor(nCtx) || 2048), // guardrail mínimo
+      n_ctx: Math.max(256, Math.floor(nCtx) || 2048), 
       threads: Math.max(1, Math.floor(threads) || 4),
     };
     await FileSystem.writeAsStringAsync(
       CONFIG_PATH,
       JSON.stringify(newConfig, null, 2)
     );
-    navigation.goBack(); // vuelve a la pantalla anterior
+    navigation.goBack(); 
   }
 
   useEffect(() => {
@@ -62,7 +59,6 @@ export default function AjustesLLM({ navigation }) {
 
       <Text style={styles.title}>⚙ Ajustes LLM</Text>
 
-      {/* n_batch */}
       <Text style={styles.label}>n_batch: {nBatch}</Text>
       <Slider
         style={styles.slider}
@@ -73,7 +69,6 @@ export default function AjustesLLM({ navigation }) {
         onValueChange={setNBatch}
       />
 
-      {/* n_ctx */}
       <Text style={styles.label}>n_ctx: {nCtx}</Text>
       <Slider
         style={styles.slider}
@@ -84,12 +79,11 @@ export default function AjustesLLM({ navigation }) {
         onValueChange={setNCtx}
       />
 
-      {/* threads (slider) */}
       <Text style={styles.label}>threads: {threads}</Text>
       <Slider
         style={styles.slider}
         minimumValue={1}
-        maximumValue={8}     // podés subir a 16 si tu device lo banca
+        maximumValue={8}     
         step={1}
         value={threads}
         onValueChange={setThreads}

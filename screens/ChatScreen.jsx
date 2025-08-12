@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View, FlatList, Text, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { StyleSheet, View, FlatList, Text } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, DrawerActions, useRoute } from '@react-navigation/native';
@@ -13,25 +13,43 @@ export default function ChatScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const route = useRoute();
-  const drawerRef = useRef(null);
-  const initialChatId = route.params?.chatId ?? null; 
-  const [chatId, setChatId] = useState(initialChatId);
+
+  const [chatId, setChatId] = useState(route.params?.chatId ?? null);
   const [messages, setMessages] = useState([]);
   const listRef = useRef(null);
 
   const chatsDir = `${FileSystem.documentDirectory}assets/chats`;
 
-  const getNextId = (arr) => {
+  // helper para calcular el próximo id por si el array no está ordenado
+  const getNextId = useCallback((arr) => {
     if (!Array.isArray(arr) || arr.length === 0) return 1;
     const maxId = arr.reduce((max, it) => Math.max(max, parseInt(it.id || '0', 10) || 0), 0);
     return maxId + 1;
-  };
+  }, []);
 
-  const loadChat = async (id) => {
+  // Carga del chat robusta: si el id no existe en el historial o falta el archivo -> salir
+  const loadChat = useCallback(async (id) => {
     try {
+      let chatsData = await store.readJSON('chatsHistory');
+      if (!Array.isArray(chatsData)) chatsData = [];
+
+      const stillExists = chatsData.some(c => String(c.id) === String(id));
+      if (!stillExists) {
+        // el chat ya no está: limpiá y volvé a Home
+        setMessages([]);
+        navigation.replace('Home');
+        return;
+      }
+
       const filePath = `${chatsDir}/${id}.json`;
       const info = await FileSystem.getInfoAsync(filePath);
-      if (!info.exists) return;
+      if (!info.exists) {
+        // no recreamos acá para evitar "revivir" chats borrados
+        setMessages([]);
+        navigation.replace('Home');
+        return;
+      }
+
       const raw = await FileSystem.readAsStringAsync(filePath);
       const json = JSON.parse(raw);
       const items = Array.isArray(json?.history) ? json.history : [];
@@ -41,21 +59,36 @@ export default function ChatScreen() {
         content: m.content,
         timestamp: m.timestamp,
       }));
-      setMessages(mapped.reverse()); 
+      // invertidos para usar FlatList con inverted
+      setMessages(mapped.reverse());
     } catch (e) {
       console.warn('loadChat error', e);
     }
-  };
+  }, [chatsDir, navigation]);
 
-  const persistMessage = async (msgText, role = 'user') => {
+  // Sincroniza el chatId cuando cambian los params (clave para evitar rutas stale)
+  useEffect(() => {
+    const nextId = route.params?.chatId ?? null;
+    setChatId(nextId);
+    if (nextId) {
+      loadChat(nextId);
+    } else {
+      setMessages([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.chatId]);
+
+  // Guarda mensaje en el archivo del chat. Si no hay chatId, crea uno nuevo y navega.
+  const persistMessage = useCallback(async (msgText, role = 'user') => {
     await FileSystem.makeDirectoryAsync(chatsDir, { intermediates: true });
 
     if (!chatId) {
-      await store.initStore();
+      // crear nuevo chat con el primer mensaje como nombre tentativo
       let chatsData = await store.readJSON('chatsHistory');
       if (!Array.isArray(chatsData)) chatsData = [];
+
       const newId = getNextId(chatsData);
-      const firstName = msgText; 
+      const firstName = msgText;
 
       const newHistory = {
         history: [
@@ -66,15 +99,21 @@ export default function ChatScreen() {
           },
         ],
       };
-      await FileSystem.writeAsStringAsync(`${chatsDir}/${newId}.json`, JSON.stringify(newHistory, null, 2));
+      await FileSystem.writeAsStringAsync(
+        `${chatsDir}/${newId}.json`,
+        JSON.stringify(newHistory, null, 2)
+      );
 
       chatsData.push({ id: String(newId), name: firstName });
       await store.writeJSON('chatsHistory', chatsData);
 
+      // sincronizá estado y params (para que loadChat se dispare y el stack quede limpio)
       setChatId(String(newId));
+      navigation.replace('Chat', { chatId: String(newId) });
       return;
     }
 
+    // append en chat existente
     const filePath = `${chatsDir}/${chatId}.json`;
     let history = { history: [] };
     try {
@@ -84,7 +123,10 @@ export default function ChatScreen() {
         history = JSON.parse(raw) || { history: [] };
         if (!Array.isArray(history.history)) history.history = [];
       }
-    } catch {}
+    } catch {
+      // si falla el parse, arrancá limpio
+      history = { history: [] };
+    }
 
     history.history.push({
       timestamp: new Date().toISOString(),
@@ -93,13 +135,9 @@ export default function ChatScreen() {
     });
 
     await FileSystem.writeAsStringAsync(filePath, JSON.stringify(history, null, 2));
-  };
+  }, [chatId, chatsDir, getNextId, navigation]);
 
-  useEffect(() => {
-    if (initialChatId) loadChat(initialChatId);
-  }, [initialChatId]);
-
-  const handleSend = async (text) => {
+  const handleSend = useCallback(async (text) => {
     const msg = (text || '').trim();
     if (!msg) return;
 
@@ -116,8 +154,7 @@ export default function ChatScreen() {
     setTimeout(() => {
       listRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, 50);
-
-  };
+  }, [persistMessage]);
 
   const renderItem = ({ item }) => {
     const isUser = item.role === 'user';
@@ -174,7 +211,7 @@ export default function ChatScreen() {
           zIndex: 100,
           borderRadius: 999,
         }}
-        onPress={() => navigation.navigate('Ajustes LLM')} // 👈 abre la screen
+        onPress={() => navigation.navigate('Ajustes LLM')}
       />
 
       <FlatList
@@ -184,7 +221,7 @@ export default function ChatScreen() {
         data={messages}
         keyExtractor={(it) => it.id}
         renderItem={renderItem}
-        inverted 
+        inverted
         removeClippedSubviews
       />
 
