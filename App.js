@@ -10,6 +10,7 @@ import ChatsDrawer from './components/Inicio/drawer';
 import HomeScreen from './screens/HomeScreen';
 import ChatScreen from './screens/ChatScreen';
 import OnboardingScreen from './screens/FirstUse';
+import AjustesLLM from './screens/Settings';
 
 import { checkModelExists } from './utils/downloadModel';
 
@@ -54,6 +55,7 @@ export default function App() {
             >
               <Drawer.Screen name="Home" component={HomeScreen} />
               <Drawer.Screen name="Chat" component={ChatScreen} />
+              <Drawer.Screen name="Ajustes LLM" component={AjustesLLM} />
             </Drawer.Navigator>
           ) : (
             <OnboardingScreen />

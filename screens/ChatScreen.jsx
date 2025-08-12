@@ -162,6 +162,21 @@ export default function ChatScreen() {
         onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       />
 
+      <IconButton
+        icon="cog"
+        size={24}
+        iconColor="#fff"
+        containerColor="rgba(255,255,255,0.08)"
+        style={{
+          position: 'absolute',
+          right: 10,
+          top: insets.top + 8,
+          zIndex: 100,
+          borderRadius: 999,
+        }}
+        onPress={() => navigation.navigate('Ajustes LLM')} // 👈 abre la screen
+      />
+
       <FlatList
         ref={listRef}
         style={{ flex: 1 }}
