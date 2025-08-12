@@ -5,6 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { TypeAnimation } from 'react-native-type-animation';
+import * as FileSystem from 'expo-file-system';          
+import store from '../utils/storeinfo';            
+
 
 import { Barpild } from '../components/Inicio/barPild';
 import CharacterSelector from '../components/Inicio/characterSelector';
@@ -12,6 +15,48 @@ import CharacterSelector from '../components/Inicio/characterSelector';
 export default function HomeScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+
+
+  const getNextId = (arr) => {
+    if (!Array.isArray(arr) || arr.length === 0) return 1;
+    const maxId = arr.reduce((max, it) => Math.max(max, parseInt(it.id || '0', 10) || 0), 0);
+    return maxId + 1;
+  };
+
+  const handleSend = async (textFromBar) => {
+    const msg = (textFromBar || '').trim();
+    if (!msg) return;
+
+    console.log('Recibido:', msg);
+
+    await store.initStore();
+    let chatsData = await store.readJSON('chatsHistory');
+    if (!Array.isArray(chatsData)) chatsData = [];
+
+    const newId = getNextId(chatsData);
+
+    const chatHistory = {
+      history: [
+        {
+          timestamp: new Date().toISOString(),
+          role: 'user',
+          content: msg,
+        },
+      ],
+    };
+
+    const dir = `${FileSystem.documentDirectory}assets/chats`;
+    await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+
+    const chatPath = `${dir}/${newId}.json`;
+    await FileSystem.writeAsStringAsync(chatPath, JSON.stringify(chatHistory, null, 2));
+
+    chatsData.push({ id: String(newId), name: msg });
+    await store.writeJSON('chatsHistory', chatsData);
+
+    navigation.navigate("Chat", { chatId: String(newId) });
+
+  };
 
   return (
     <View style={styles.container}>
@@ -49,7 +94,7 @@ export default function HomeScreen() {
         style={styles.title}
       />
 
-      <Barpild />
+      <Barpild placeholder="Ask anything" onSend={handleSend} />
     </View>
   );
 }

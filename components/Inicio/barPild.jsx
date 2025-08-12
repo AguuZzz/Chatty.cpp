@@ -1,23 +1,41 @@
+import React, { useState } from "react";
 import { TextInput, View, StyleSheet } from "react-native";
 import { IconButton } from "react-native-paper";
 
-export const Barpild = () => {
-    return (
-        <View style={styles.container}>
-            <TextInput
-                style={[styles.textinput, { flex: 1 }]}
-                placeholder="Ask anything you want"
-                placeholderTextColor="#cfcdcdff"
-            />
-            <IconButton
-                icon="send"
-                mode="contained"
-                style={styles.button}
-                iconColor="#000000"
-                size={18}
-            />
-        </View>
-    );
+
+
+export const Barpild = ({ placeholder = null, onSend }) => {
+  const [text, setText] = useState("");
+  
+
+  const handleSend = () => {
+    setText("");
+    if (!text.trim()) return;
+    onSend && onSend(text.trim());
+  };
+
+  return (
+    <View style={styles.container}>
+      <TextInput
+        style={[styles.textinput, { flex: 1 }]}
+        placeholder={placeholder}
+        placeholderTextColor="#cfcdcdff"
+        value={text}
+        onChangeText={setText}
+        returnKeyType="send"
+        onSubmitEditing={handleSend}
+        blurOnSubmit={false}
+      />
+      <IconButton
+        icon="send"
+        mode="contained"
+        style={styles.button}
+        iconColor="#000000"
+        size={18}
+        onPress={handleSend}
+      />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
