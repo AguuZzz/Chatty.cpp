@@ -1,33 +1,31 @@
 import * as React from "react";
 import { View } from "react-native";
 import { Drawer, Button, useTheme, TextInput } from "react-native-paper";
-import store from "../../utils/storeinfo"; // 👈 para leer/escribir el JSON mutable
+import store from "../../utils/storeinfo";
 
-export default function CharacterCreator({ onClose }) {
+export default function CharacterCreator({ onClose, onSave }) { // 👈 recibí onSave
   const [name, setName] = React.useState("");
   const [emoji, setEmoji] = React.useState("");
   const [sysprompt, setSysprompt] = React.useState("");
   const theme = useTheme();
 
   const handleSave = async () => {
-    // Evitar guardar vacío
-    if (!name.trim()) return;
+    if (!name.trim()) return null; // no guardes vacío
 
-    // Leer el JSON actual
+    // (opcional) asegurate de que exista el store
+    await store.initStore();
+
     const characters = await store.readJSON("characters");
 
-    // Crear nuevo personaje
     const newChar = {
       name: name.trim(),
-      emoji: emoji.trim() || "👤",
+      emoji: (emoji || "👤").trim(),
       sysprompt: sysprompt.trim(),
     };
 
-    // Guardar al final de la lista
     await store.writeJSON("characters", [...characters, newChar]);
 
-    // Cerrar modal
-    onClose?.();
+    return newChar; // 👈 devolvemos el creado
   };
 
   return (
@@ -59,13 +57,17 @@ export default function CharacterCreator({ onClose }) {
           Cancel
         </Button>
         <Button
-        mode="contained"
-        onPress={async () => {
-            await handleSave(); // guarda el personaje
-            onSave?.(); // avisa al selector que recargue
-        }}
+          mode="contained"
+          onPress={async () => {
+            const newChar = await handleSave();   // 👈 ahora lo tenés acá
+            if (newChar) {
+              onSave?.(newChar);                  // 🔔 avisás al padre
+              onClose?.();                        // y cerrás
+            }
+          }}
+          disabled={!name.trim()}
         >
-        Save
+          Save
         </Button>
       </View>
     </View>
