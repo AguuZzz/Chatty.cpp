@@ -1,12 +1,12 @@
 import * as FileSystem from "expo-file-system";
 
-export const HF_URL =
+export const HF_URL = 
   "https://huggingface.co/QuantFactory/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct.Q4_K_M.gguf?download=true";
 
 export const OUTPUT_FILE = FileSystem.documentDirectory + "model.gguf";
 const TEMP_FILE = OUTPUT_FILE + ".part";
 
-export async function checkModelExists(minBytes = 900 * 1024 * 1024) {
+export async function checkModelExists(minBytes =  900 * 1024 * 1024 ) {
   try {
     const info = await FileSystem.getInfoAsync(OUTPUT_FILE);
     return !!(info.exists && (info.size ?? 0) >= minBytes);

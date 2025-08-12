@@ -17,6 +17,7 @@ import { checkModelExists } from './utils/downloadModel';
 const Drawer = createDrawerNavigator();
 
 
+
 export default function App() {
   const [hasModel, setHasModel] = useState(null);
 
