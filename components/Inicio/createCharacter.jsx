@@ -3,16 +3,15 @@ import { View } from "react-native";
 import { Drawer, Button, useTheme, TextInput } from "react-native-paper";
 import store from "../../utils/storeinfo";
 
-export default function CharacterCreator({ onClose, onSave }) { // 👈 recibí onSave
+export default function CharacterCreator({ onClose, onSave }) {
   const [name, setName] = React.useState("");
   const [emoji, setEmoji] = React.useState("");
   const [sysprompt, setSysprompt] = React.useState("");
   const theme = useTheme();
 
   const handleSave = async () => {
-    if (!name.trim()) return null; // no guardes vacío
+    if (!name.trim()) return null; 
 
-    // (opcional) asegurate de que exista el store
     await store.initStore();
 
     const characters = await store.readJSON("characters");
@@ -25,7 +24,7 @@ export default function CharacterCreator({ onClose, onSave }) { // 👈 recibí 
 
     await store.writeJSON("characters", [...characters, newChar]);
 
-    return newChar; // 👈 devolvemos el creado
+    return newChar; 
   };
 
   return (
@@ -59,10 +58,10 @@ export default function CharacterCreator({ onClose, onSave }) { // 👈 recibí 
         <Button
           mode="contained"
           onPress={async () => {
-            const newChar = await handleSave();   // 👈 ahora lo tenés acá
+            const newChar = await handleSave();  
             if (newChar) {
-              onSave?.(newChar);                  // 🔔 avisás al padre
-              onClose?.();                        // y cerrás
+              onSave?.(newChar);                 
+              onClose?.();                       
             }
           }}
           disabled={!name.trim()}

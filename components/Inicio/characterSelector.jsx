@@ -1,4 +1,3 @@
-// CharacterSelector.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import {
@@ -59,7 +58,6 @@ export default function CharacterSelector({ label = "Select AI role", onChange }
     const filtered = characters.filter((c) => c.name !== name);
     await store.writeJSON("characters", filtered);
 
-    // si borraste el actual, eligí el primero
     if (current?.name === name) {
       const next = filtered[0]
         ? { name: filtered[0].name, emoji: filtered[0].emoji || "👤" }
@@ -170,7 +168,7 @@ export default function CharacterSelector({ label = "Select AI role", onChange }
             onClose={closeCreator}
             onSave={() => {
               closeCreator();
-              loadCharacters(); // refresca al toque
+              loadCharacters();
             }}
           />
         </Modal>

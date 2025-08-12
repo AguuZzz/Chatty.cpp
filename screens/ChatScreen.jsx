@@ -14,9 +14,9 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const route = useRoute();
   const drawerRef = useRef(null);
-  const initialChatId = route.params?.chatId ?? null; // si no viene, se crea al primer send
+  const initialChatId = route.params?.chatId ?? null; 
   const [chatId, setChatId] = useState(initialChatId);
-  const [messages, setMessages] = useState([]); // [{id, role, content, timestamp}]
+  const [messages, setMessages] = useState([]);
   const listRef = useRef(null);
 
   const chatsDir = `${FileSystem.documentDirectory}assets/chats`;
@@ -41,7 +41,7 @@ export default function ChatScreen() {
         content: m.content,
         timestamp: m.timestamp,
       }));
-      setMessages(mapped.reverse()); // FlatList inverted: más nuevo arriba visualmente
+      setMessages(mapped.reverse()); 
     } catch (e) {
       console.warn('loadChat error', e);
     }
@@ -169,12 +169,12 @@ export default function ChatScreen() {
         data={messages}
         keyExtractor={(it) => it.id}
         renderItem={renderItem}
-        inverted // muestra lo más nuevo abajo visualmente (lista empieza arriba)
+        inverted 
         removeClippedSubviews
       />
 
       <View style={[styles.barpildWrap, { paddingBottom: insets.bottom + 8, paddingHorizontal: 20 }]}>
-        <Barpild placeholder="Escribí un mensaje..." onSend={handleSend} />
+        <Barpild placeholder="Write something..." onSend={handleSend} />
       </View>
     </View>
   );
