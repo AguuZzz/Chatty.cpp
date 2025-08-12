@@ -1,6 +1,0 @@
-[
-  { "name": "Ninja",  "description": "Sigiloso maestro de las sombras.", "emoji": "🥷" },
-  { "name": "Robot",  "description": "Máquina inteligente y fuerte.",  "emoji": "🤖" },
-  { "name": "Pirata", "description": "Aventurero de los mares.",        "emoji": "🏴‍☠️" },
-  { "name": "Mago",   "description": "Hechicero de magia antigua.",     "emoji": "🧙‍♂️" }
-]

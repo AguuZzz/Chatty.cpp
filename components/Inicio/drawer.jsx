@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { Drawer as PaperDrawer } from "react-native-paper";
-import chatsData from "../../constants/chatshistory.json"; // [{ id: "1", name: "Agus" }, ...]
+import store from "../../utils/storeinfo"; // 👈 manejador de JSON mutable
 
 export default function ChatsDrawer({
   navigation,
@@ -12,18 +12,22 @@ export default function ChatsDrawer({
   const [activeId, setActiveId] = useState(null);
   const [chats, setChats] = useState([]);
 
+  // Cargar chats desde JSON editable
   useEffect(() => {
-    setChats(Array.isArray(chatsData) ? chatsData : []);
-    if (chatsData?.[0]?.id) {
-      setActiveId(chatsData[0].id);
-    }
+    (async () => {
+      await store.initStore(); // crea si no existe
+      const chatsData = await store.readJSON("chatsHistory");
+      setChats(Array.isArray(chatsData) ? chatsData : []);
+      if (chatsData?.[0]?.id) {
+        setActiveId(chatsData[0].id);
+      }
+    })();
   }, []);
 
   // Sync con la ruta activa
   useEffect(() => {
     const current = state?.routes?.[state.index];
     const fromRoute = current?.params?.chatId;
-
     if (fromRoute && fromRoute !== activeId) {
       setActiveId(fromRoute);
     }
@@ -38,14 +42,14 @@ export default function ChatsDrawer({
   return (
     <DrawerContentScrollView>
       <PaperDrawer.Section title={title}>
-        <PaperDrawer.Item 
-            icon={"chat-plus"}
-            label="New Chat"
-            style={style.listItems}
-            onPress={() => {
-              setActiveId(null);
-              navigation.navigate("Home");
-            }}
+        <PaperDrawer.Item
+          icon={"chat-plus"}
+          label="New Chat"
+          style={style.listItems}
+          onPress={() => {
+            setActiveId(null);
+            navigation.navigate("Home");
+          }}
         />
         {chats.map((chat) => (
           <PaperDrawer.Item
@@ -61,12 +65,11 @@ export default function ChatsDrawer({
   );
 }
 
-
 const style = {
   listItems: {
     backgroundColor: "#7c7b7bff",
     height: 50,
     marginVertical: 5,
     borderRadius: 30,
-  }
+  },
 };

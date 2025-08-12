@@ -4,6 +4,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Provider as PaperProvider } from 'react-native-paper';
 import React from 'react';
+import { useEffect } from 'react';
+
+import store from './utils/storeinfo';
+
 
 import ChatsDrawer from './components/Inicio/drawer';
 import HomeScreen from './screens/HomeScreen';
@@ -12,6 +16,10 @@ import ChatScreen from './screens/ChatScreen';
 const Drawer = createDrawerNavigator();
 
 export default function App() {
+  useEffect(() => {
+    store.initStore();
+  }, []);
+  
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PaperProvider>
