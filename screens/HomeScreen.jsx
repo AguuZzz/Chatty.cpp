@@ -39,10 +39,10 @@ export default function HomeScreen() {
       <TypeAnimation
         sequence={[
           { text: 'Chatty.cpp', typeSpeed: 80, delayBetweenSequence: 4000 },
-          { text: 'Feel secure', typeSpeed: 80, delayBetweenSequence: 1000 },
-          { text: 'Feel private', typeSpeed: 80, delayBetweenSequence: 1000 },
-          { text: 'Feel free', typeSpeed: 80, delayBetweenSequence: 1000 },
-          { text: 'All local', typeSpeed: 80, delayBetweenSequence: 1000 },
+          { text: 'No cloud', typeSpeed: 80, delayBetweenSequence: 1200 },
+          { text: 'Your AI', typeSpeed: 80, delayBetweenSequence: 1200 },
+          { text: 'For you', typeSpeed: 80, delayBetweenSequence: 1200 },
+          { text: 'Anywhere', typeSpeed: 80, delayBetweenSequence: 1200 },
         ]}
         speed={100}
         repeat={Infinity}
@@ -71,5 +71,6 @@ const styles = StyleSheet.create({
     fontSize: 50,
     marginBottom: 20,
     textAlign: 'center',
+    marginLeft: 10,
   },
 });
