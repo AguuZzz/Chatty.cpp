@@ -1,13 +1,13 @@
 import * as FileSystem from "expo-file-system";
 
 export const HF_URL = 
-  "https://huggingface.co/QuantFactory/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct.Q4_K_M.gguf?download=true";
+  "https://huggingface.co/unsloth/LFM2-1.2B-GGUF/resolve/main/LFM2-1.2B-Q8_0.gguf?download=true";
 
 export const OUTPUT_FILE = FileSystem.documentDirectory + "model.gguf";
 const TEMP_FILE = OUTPUT_FILE + ".part";
 
-export async function checkModelExists(minBytes =  900 * 1024 * 1024 ) {
-  try {
+export async function checkModelExists(minBytes =  600 * 1024 * 1024 ) {
+  try {  
     const info = await FileSystem.getInfoAsync(OUTPUT_FILE);
     return !!(info.exists && (info.size ?? 0) >= minBytes);
   } catch {

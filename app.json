@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "proyecto",
+    "name": "Chatty.cpp",
     "slug": "proyecto",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -21,7 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.aguzitopy.proyecto"
+      "package": "com.aguzitopy.chattycpp"
     },
     "web": {
       "favicon": "./assets/favicon.png"

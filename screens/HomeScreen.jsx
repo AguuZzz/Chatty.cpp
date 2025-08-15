@@ -1,12 +1,13 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, DrawerActions, CommonActions  } from '@react-navigation/native';
+import { useNavigation, DrawerActions, CommonActions } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { TypeAnimation } from 'react-native-type-animation';
 import * as FileSystem from 'expo-file-system';
 import store from '../utils/storeinfo';
+import { checkModelExists } from '../utils/downloadModel';
 import { Barpild } from '../components/Inicio/barPild';
 import CharacterSelector from '../components/Inicio/characterSelector';
 
@@ -16,6 +17,33 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const creatingRef = useRef(false);
+  const [hasModel, setHasModel] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const exists = await checkModelExists();
+        setHasModel(exists);
+        if (!exists) {
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: 'Onboarding' }],
+            })
+          );
+        }
+      } catch (e) {
+        console.warn('Error checking model:', e);
+        setHasModel(false);
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Onboarding' }],
+          })
+        );
+      }
+    })();
+  }, [navigation]);
 
   const getNextId = useCallback((arr) => {
     if (!Array.isArray(arr) || arr.length === 0) return 1;

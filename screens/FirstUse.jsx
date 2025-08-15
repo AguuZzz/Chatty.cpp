@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+  Linking,
   View,
   ScrollView,
   ImageBackground,
@@ -8,7 +9,7 @@ import {
 } from "react-native";
 import { Text, Button, useTheme, Icon } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions  } from "@react-navigation/native";
 
 import { downloadModel } from "../utils/downloadModel";
 
@@ -20,21 +21,21 @@ const SLIDES = [
     title: "Welcome to Chatty.cpp",
     subtitle: "Your local and personal AI chat companion.",
     icon: "robot",
-    bgcolor: "#00f729ff",
+    bgcolor: "#6d6d6dff",
   },
   {
     key: "2",
     title: "Don't worry about privacy",
     subtitle: "Every chat is stored locally on your device.",
     icon: "shield-lock-outline",
-    bgcolor: "#003af7ff",
+    bgcolor: "#6d6d6dff",
   },
   {
     key: "3",
     title: "But first...",
-    subtitle: "We need to download the initial model.",
+    subtitle: "We need to download the initial model (∼1gb)",
     icon: "download",
-    bgcolor: "#f70098ff",
+    bgcolor: "#6d6d6dff",
   },
 ];
 
@@ -53,20 +54,26 @@ export default function OnboardingScreen() {
     setIndex(Math.round(x / width));
   };
 
-  const handleDownload = async () => {
-    try {
-      setDownloading(true);
-      setProgress(0);
-      const uri = await downloadModel((p) => setProgress(p));
-      setProgress(1);
-      console.log("✅ Modelo listo en:", uri);
-      nav.navigate("Home");
-    } catch (err) {
-      console.error("❌ Error descargando el modelo:", err);
-    } finally {
-      setTimeout(() => setDownloading(false), 400);
-    }
-  };
+const handleDownload = async () => {
+  try {
+    setDownloading(true);
+    setProgress(0);
+    const uri = await downloadModel((p) => setProgress(p));
+    setProgress(1);
+    console.log("✅ Modelo listo en:", uri);
+
+    nav.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: "Home" }],
+      })
+    );
+  } catch (err) {
+    console.error("❌ Error descargando el modelo:", err);
+  } finally {
+    setTimeout(() => setDownloading(false), 400);
+  }
+};
 
   const pct = Math.round(progress * 100);
 
@@ -119,23 +126,49 @@ export default function OnboardingScreen() {
       </View>
 
       <View style={styles.ctaBox}>
-        <Button
-          mode="contained"
-          onPress={handleDownload}
-          disabled={downloading}
-          style={styles.signInBtn}
-          contentStyle={{ height: 50, backgroundColor: "black" }}
-        >
-          <View style={styles.progressWrap}>
-            {downloading ? (
-              <View style={[styles.fill, { width: `${pct}%` }]} />
-            ) : null}
-            <Text style={styles.btnText}>
-              {downloading ? `Descargando ${pct}%` : "Download initial model"}
-            </Text>
-          </View>
-        </Button>
+        {index === 2 && (
+          <>
+            <Button
+              mode="contained"
+              onPress={handleDownload}
+              disabled={downloading}
+              style={styles.signInBtn}
+              contentStyle={{ height: 50, backgroundColor: "black" }}
+            >
+              <View style={styles.progressWrap}>
+                {downloading && (
+                  <View style={[styles.fill, { width: `${pct}%` }]} />
+                )}
+                <Text style={styles.btnText}>
+                  {downloading
+                    ? `Downloading ${pct}%`
+                    : "Download initial model"}
+                </Text>
+              </View>
+            </Button>
+
+            <Button
+              mode="contained"
+              onPress={() => Linking.openURL("https://huggingface.co/unsloth/LFM2-1.2B-GGUF")}
+              style={styles.signInBtn}
+              contentStyle={{
+                height: 50,
+                backgroundColor: "#FFD21E",
+              }}
+              labelStyle={{
+                fontWeight: "700",
+                color: "#000",
+              }}
+              icon="link"
+            >
+              Visit the model page on HuggingFace
+            </Button>
+
+
+          </>
+        )}
       </View>
+
     </ImageBackground>
   );
 }
@@ -149,7 +182,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   hero: {
-    marginTop: 24,
+    marginTop: -55,
     marginBottom: 12,
     height: height * 0.35,
     justifyContent: "center",
@@ -174,7 +207,7 @@ const styles = StyleSheet.create({
   },
   dots: {
     position: "absolute",
-    bottom: 150,
+    bottom: 200,
     width: "100%",
     flexDirection: "row",
     justifyContent: "center",
