@@ -1,4 +1,3 @@
-// screens/AjustesLLM.jsx
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import { Text, Button } from "react-native-paper";
@@ -6,8 +5,7 @@ import Slider from "@react-native-community/slider";
 import * as FileSystem from "expo-file-system";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import configInit from "../assets/jsons/config.json"; // archivo base inicial
-
+import configInit from "../assets/jsons/config.json";
 const CONFIG_PATH = FileSystem.documentDirectory + "config.json";
 
 export default function AjustesLLM({ navigation }) {
@@ -97,7 +95,7 @@ export default function AjustesLLM({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#232323" }, // 👈 sin marginTop
+  container: { flex: 1, padding: 20, backgroundColor: "#232323" }, 
   title: { fontSize: 20, fontWeight: "bold", color: "#fff", marginBottom: 20 },
   label: { color: "#fff", marginBottom: 8, marginTop: 12 },
   slider: { width: "100%", height: 40 },

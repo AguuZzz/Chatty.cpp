@@ -1,4 +1,3 @@
-// screens/ChatScreen.jsx
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { StyleSheet, View, FlatList, Text, Animated } from 'react-native';
 import { IconButton } from 'react-native-paper';
@@ -58,13 +57,15 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const stopRef = useRef(null);               // guarda la función stop
-  const streamingMsgIdRef = useRef(null);     // id del globo del assistant que se está llenando
+  const stopRef = useRef(null);
+  const streamingMsgIdRef = useRef(null);
   const listRef = useRef(null);
+
+  // ✅ evita auto-disparos múltiples
+  const autoStartedRef = useRef(false);
 
   const chatsDir = `${FileSystem.documentDirectory}assets/chats`;
 
-  // ---------- Persistencia: agrega un mensaje (user|assistant) al archivo del chat ----------
   const getNextId = useCallback((arr) => {
     if (!Array.isArray(arr) || arr.length === 0) return 1;
     const maxId = arr.reduce((max, it) => Math.max(max, parseInt(it.id || '0', 10) || 0), 0);
@@ -74,7 +75,6 @@ export default function ChatScreen() {
   const persistMessage = useCallback(async (msgText, role = 'user') => {
     await FileSystem.makeDirectoryAsync(chatsDir, { intermediates: true }).catch(() => {});
 
-    // Si no hay chat, crear uno nuevo
     if (!chatId) {
       let chatsData = await store.readJSON('chatsHistory').catch(() => []);
       if (!Array.isArray(chatsData)) chatsData = [];
@@ -98,7 +98,6 @@ export default function ChatScreen() {
       return String(newId);
     }
 
-    // Actualizar chat existente
     const filePath = `${chatsDir}/${chatId}.json`;
     let chatObj = { id: String(chatId), history: [] };
     try {
@@ -117,7 +116,6 @@ export default function ChatScreen() {
     return String(chatId);
   }, [chatId, chatsDir, getNextId, navigation]);
 
-  // ---------- Cargar chat en memoria para UI ----------
   const loadChat = useCallback(async (id) => {
     try {
       let chatsData = await store.readJSON('chatsHistory').catch(() => []);
@@ -149,7 +147,8 @@ export default function ChatScreen() {
         timestamp: m.timestamp,
       }));
 
-      setMessages(mapped.reverse()); // FlatList invertido
+      // invertimos para el FlatList invertido
+      setMessages(mapped.reverse());
     } catch (e) {
       console.warn('loadChat error', e);
     }
@@ -160,13 +159,16 @@ export default function ChatScreen() {
     setChatId(nextId);
     if (nextId) loadChat(nextId);
     else setMessages([]);
+    // al cambiar de chat, permitimos un nuevo auto-start si aplica
+    autoStartedRef.current = false;
   }, [route.params?.chatId, loadChat]);
 
-  // ---------- Streaming del assistant usando startProcess (código 1) ----------
   const startAssistantStreaming = useCallback(async () => {
     if (!chatId || isGenerating) return;
 
-    // Globo del assistant vacío
+    // marcamos que ya arrancamos para que el efecto no duplique
+    autoStartedRef.current = true;
+
     const newAssistant = {
       id: `${Date.now()}-asst`,
       role: 'assistant',
@@ -215,20 +217,16 @@ export default function ChatScreen() {
       }
     });
 
-    // Guardamos SOLO la función stop
     stopRef.current = controller?.stop;
 
-    // scroll al top
     setTimeout(() => {
       listRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, 50);
   }, [chatId, isGenerating]);
 
-  // ---------- Enviar / Detener ----------
   const handleSend = useCallback(async (text) => {
     const trimmed = (text || '').trim();
 
-    // Si está generando, al tocar enviar → stop
     if (isGenerating && stopRef.current) {
       stopRef.current?.();
       stopRef.current = null;
@@ -238,7 +236,6 @@ export default function ChatScreen() {
 
     if (!trimmed) return;
 
-    // UI inmediata del user
     const newUser = {
       id: `${Date.now()}`,
       role: 'user',
@@ -247,23 +244,39 @@ export default function ChatScreen() {
     };
     setMessages((prev) => [newUser, ...prev]);
 
-    // Persistir USER (y crear chat si no existe)
     const idStr = await persistMessage(trimmed, 'user');
     const chatIdToUse = chatId ?? idStr;
 
     if (!chatId && chatIdToUse) {
       setChatId(chatIdToUse);
-      // pequeña espera por si el navigator reemplaza la ruta
+      // marcamos que se va a autoiniciar por envío del user
+      autoStartedRef.current = true;
       setTimeout(() => startAssistantStreaming(), 30);
     } else {
+      autoStartedRef.current = true;
       startAssistantStreaming();
     }
 
-    // scroll
     setTimeout(() => {
       listRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, 50);
   }, [chatId, isGenerating, persistMessage, startAssistantStreaming]);
+
+  // 🔥 Auto-inicio al abrir el chat si hay un único mensaje del usuario
+  useEffect(() => {
+    if (!chatId) return;
+    if (isGenerating) return;
+    if (autoStartedRef.current) return;
+
+    const onlyOne = messages.length === 1;
+    const top = messages[0];
+
+    if (onlyOne && top?.role === 'user' && (top?.content ?? '').trim().length > 0) {
+      // arrancamos inferencia automáticamente
+      autoStartedRef.current = true;
+      startAssistantStreaming();
+    }
+  }, [chatId, messages, isGenerating, startAssistantStreaming]);
 
   const renderItem = ({ item }) => {
     const isUser = item.role === 'user';

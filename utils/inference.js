@@ -1,8 +1,7 @@
-// utils/inference.js
 import { initLlama } from "llama.rn";
 import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import store from "./storeinfo"; // debe exponer readJSON y (si querés) writeJSON
+import store from "./storeinfo"; 
 
 const MODEL_PATH = FileSystem.documentDirectory + "model.gguf";
 const CHAT_DIR = FileSystem.documentDirectory + "assets/chats";
@@ -15,7 +14,6 @@ const STOP_WORDS = [
   "<|end_of_turn|>", "<|endoftext|>"
 ];
 
-// -------------------- Helpers --------------------
 async function ensureChatDir() {
   await FileSystem.makeDirectoryAsync(CHAT_DIR, { intermediates: true }).catch(() => {});
 }
@@ -40,9 +38,7 @@ async function writeChatObject(chatID, obj) {
   await FileSystem.writeAsStringAsync(p, JSON.stringify(obj ?? {}, null, 2));
 }
 
-// -------------------- Paso 1: Contexto --------------------
 export async function prepareContext(chatID) {
-  // 1) sysprompt desde personaje
   let sysprompt = "Sos un asistente útil y directo.";
   try {
     const charactersData = await store.readJSON("characters");
@@ -52,10 +48,8 @@ export async function prepareContext(chatID) {
       : null;
     if (found?.sysprompt?.trim()) sysprompt = found.sysprompt.trim();
   } catch {
-    // fallback ya definido
   }
 
-  // 2) historial del chat (últimos 10) y chatCTX con system primero
   const chatObj = await readChatObject(chatID);
   const hist = Array.isArray(chatObj.history) ? chatObj.history : [];
   const last10 = hist.length > 10 ? hist.slice(-10) : hist;
@@ -68,7 +62,6 @@ export async function prepareContext(chatID) {
   return { sysprompt, chatCTX };
 }
 
-// -------------------- Paso 2: Config --------------------
 export async function prepareCFG() {
   try {
     const cfg = await store.readJSON("config");
@@ -81,11 +74,7 @@ export async function prepareCFG() {
   }
 }
 
-// -------------------- Paso 3: Inferencia con streaming --------------------
-/**
- * onToken(token, fullSoFar)
- * shouldContinue() => boolean (true para seguir, false para cortar)
- */
+
 export async function inference(
   sysprompt,
   chatCTX,
@@ -118,13 +107,12 @@ export async function inference(
         full += token;
         onToken?.(token, full);
       }
-      // Control de cancelación
       if (shouldContinue && !shouldContinue()) return false;
       return true;
     }
   );
 
-  // Guardar respuesta del assistant al finalizar
+
   await ensureChatDir();
   const chatObj = await readChatObject(id);
   chatObj.history.push({
@@ -137,11 +125,7 @@ export async function inference(
   return full;
 }
 
-// -------------------- Paso 4: Orquestador simple para la pantalla --------------------
-/**
- * startProcess(chatId, { onToken, onDone, onError })
- * Devuelve { stop: () => void }
- */
+
 export function startProcess(chatId, { onToken, onDone, onError } = {}) {
   let cancelled = false;
 
